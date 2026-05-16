@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   build-and-scan:
@@ -44,7 +45,8 @@ jobs:
         with:
           scan-type: fs
           scan-ref: .
-          format: table
+          format: sarif
+          output: trivy-results.sarif
           scanners: vuln,secret
           vuln-type: library
           severity: CRITICAL,HIGH
