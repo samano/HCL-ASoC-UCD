@@ -1,0 +1,60 @@
+name: Build and Scan ASoC UCD Plugin
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: 6.9.4
+
+      - name: Build plugin distributable
+        run: gradle clean distPlugin
+
+      - name: Upload plugin ZIP
+        uses: actions/upload-artifact@v6
+        with:
+          name: HCL-ASoC-UCD-plugin
+          path: build/distributions/*.zip
+
+  appscan:
+    name: AppScan SAST and SCA
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Run AppScan scan
+        uses: HCL-TECH-SOFTWARE/appscan-sast-action@v1.0.8
+        with:
+          asoc_key: ${{ secrets.ASOC_KEY }}
+          asoc_secret: ${{ secrets.ASOC_SECRET }}
+          application_id: ${{ secrets.ASOC_APPLICATION_ID }}
+          scan_name: HCL-ASoC-UCD GitHub Actions scan
+          wait_for_analysis: true
+          fail_for_noncompliance: true
+          failure_threshold: high
